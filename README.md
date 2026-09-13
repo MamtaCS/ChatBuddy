@@ -172,13 +172,7 @@ http://localhost:5173
 
 ---
 
-## 📸 Screenshots
 
-*(Add screenshots of ChatBuddy in action below)*
-
-| Welcome Screen | Active Chat & Image Prompt |
-|:---:|:---:|
-| ![Welcome Screen Placeholder](https://via.placeholder.com/600x350/161224/8B5CF6?text=ChatBuddy+Welcome+Screen) | ![Active Chat Placeholder](https://via.placeholder.com/600x350/161224/F97316?text=ChatBuddy+Active+Conversation) |
 
 ---
 
