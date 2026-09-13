@@ -1,122 +1,86 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+import { useState, useEffect } from 'react';
+import './App.css';
+import { Navbar } from './components/Navbar.jsx';
+import { QuickSuggestions } from './components/QuickSuggestions.jsx';
+import { MessageBubble } from './components/MessageBubble.jsx';
+import { ChatInput } from './components/ChatInput.jsx';
+import { TypingIndicator } from './components/TypingIndicator.jsx';
 
-function App() {
-  const [count, setCount] = useState(0)
+function App() { console.log('App rendered');
+  const [messages, setMessages] = useState([]);
+  const [isTyping, setIsTyping] = useState(false);
+  const [engineBadge, setEngineBadge] = useState('');
+
+  // Fetch backend engine status on mount
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch('/api/status');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.aiEngine) setEngineBadge(data.aiEngine);
+        }
+      } catch (e) {
+        console.error('Status fetch error:', e);
+      }
+    })();
+  }, []);
+
+  const clearChat = () => {
+    setMessages([]);
+  };
+
+  const handleSendMessage = async (text) => {
+    if (!text && !isTyping) return;
+    if (isTyping) return;
+
+    const userMessage = { sender: 'user', text, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
+    setMessages((prev) => [...prev, userMessage]);
+    setIsTyping(true);
+
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: text })
+      });
+      if (response.ok) {
+        const data = await response.json();
+        const botMessage = { sender: 'bot', text: data.reply || 'I am here to help!', timestamp: data.timestamp || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
+        setMessages((prev) => [...prev, botMessage]);
+      } else {
+        const err = await response.json();
+        const botMessage = { sender: 'bot', text: `⚠️ Notice: ${err.error || 'Something went wrong.'}`, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
+        setMessages((prev) => [...prev, botMessage]);
+      }
+    } catch (e) {
+      console.error('Chat error:', e);
+      const botMessage = { sender: 'bot', text: '⚠️ Network error: Unable to reach the server.', timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
+      setMessages((prev) => [...prev, botMessage]);
+    } finally {
+      setIsTyping(false);
+    }
+  };
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
+    <div className="app-container">
+      <Navbar onClearChat={clearChat} hasMessages={messages.length > 0} />
+      <div className="chat-window" id="chat-window">
+        <div className="chat-inner">
+          {messages.map((msg, idx) => (
+            <MessageBubble key={idx} message={msg} />
+          ))}
+          {isTyping && <TypingIndicator />}
         </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
+      </div>
+      <div className="input-area-wrapper">
+        <div className="input-container">
+          <QuickSuggestions onSelectSuggestion={handleSendMessage} isTyping={isTyping} />
+          <ChatInput onSendMessage={handleSendMessage} isTyping={isTyping} />
         </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+      </div>
+    </div>
+  );
 }
 
 export default App
